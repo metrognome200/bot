@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiggyBasket Bot Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        #connectBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #disconnectBtn {
+            background-color: #f44336;
+            color: white;
+            display: none;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .disconnected {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Bot Control Panel</h2>
+        <div class="input-group">
+            <label for="botToken">Bot Token:</label>
+            <input type="text" id="botToken" placeholder="Enter your bot token">
+        </div>
+        <div class="input-group">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" placeholder="Enter your Telegram user ID">
+        </div>
+        <button id="connectBtn" onclick="connectBot()">Connect Bot</button>
+        <button id="disconnectBtn" onclick="disconnectBot()">Disconnect Bot</button>
+        <div id="status" class="status disconnected">Disconnected</div>
+    </div>
+
+    <script>
+        let isConnected = false;
+
+        async function connectBot() {
+            const botToken = document.getElementById('botToken').value.trim();
+            const userId = document.getElementById('userId').value.trim();
+
+            if (!botToken || !userId) {
+                alert('Please enter both Bot Token and User ID');
+                return;
+            }
+
+            try {
+                const response = await fetch('/set-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ botToken, userId })
+                });
+
+                const data = await response.json();
+                
+                if (data.ok) {
+                    isConnected = true;
+                    updateUI(true);
+                } else {
+                    alert('Failed to connect: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error connecting to bot: ' + error.message);
+            }
+        }
+
+        async function disconnectBot() {
+            const userId = document.getElementById('userId').value.trim();
+            
+            try {
+                // Stop any running scripts
+                const response = await fetch(`/status/${userId}`);
+                const data = await response.json();
+                
+                if (data.isRunning) {
+                    // If there's a running script, stop it
+                    await fetch('/update-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ userId, telegramData: null })
+                    });
+                }
+
+                isConnected = false;
+                updateUI(false);
+            } catch (error) {
+                alert('Error disconnecting bot: ' + error.message);
+            }
+        }
+
+        function updateUI(connected) {
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const status = document.getElementById('status');
+            const botTokenInput = document.getElementById('botToken');
+            const userIdInput = document.getElementById('userId');
+
+            if (connected) {
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+                status.textContent = 'Connected';
+                status.className = 'status connected';
+                botTokenInput.disabled = true;
+                userIdInput.disabled = true;
+            } else {
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+                status.textContent = 'Disconnected';
+                status.className = 'status disconnected';
+                botTokenInput.disabled = false;
+                userIdInput.disabled = false;
+            }
+        }
+
+        // Check initial connection status
+        async function checkStatus() {
+            const userId = document.getElementById('userId').value.trim();
+            if (userId) {
+                try {
+                    const response = await fetch(`/status/${userId}`);
+                    const data = await response.json();
+                    if (data.hasConfig) {
+                        isConnected = true;
+                        updateUI(true);
+                    }
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                }
+            }
+        }
+
+        // Check status when user ID is entered
+        document.getElementById('userId').addEventListener('change', checkStatus);
+    </script>
+</body>
+</html>

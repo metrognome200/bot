@@ -1,0 +1,39 @@
+{
+  "name": "pygibank-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot for automated PiggyBasket tasks",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "build": "docker build -t pygibank-bot .",
+    "deploy": "docker run -d -p 3000:3000 --name pygibank-bot pygibank-bot"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2",
+    "axios": "^1.6.2",
+    "node-telegram-bot-api": "^0.64.0",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metrognome000/pygibank-bot.git"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "piggybasket",
+    "automation"
+  ],
+  "author": "Mr.Coco",
+  "license": "ISC"
+} 
